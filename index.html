@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ให้ดาวคาเฟ่จากความคิดเห็น</title>
+  <style>
+    :root { --bg:#0b1220; --card:#111a2e; --text:#e8eeff; --muted:#a6b3d6; --line:#223056; }
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 10%, #1a2a55, transparent),
+                  radial-gradient(900px 500px at 80% 20%, #2a1a55, transparent),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .wrap{ width:min(920px, 100%); display:grid; gap:16px; grid-template-columns: 1.2fr 0.8fr; }
+    @media (max-width: 860px){ .wrap{ grid-template-columns:1fr; } }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      border-radius:18px;
+      padding:18px;
+    }
+    h1{ margin:0 0 8px; font-size:20px; letter-spacing:.2px; }
+    .sub{ color:var(--muted); margin:0 0 14px; font-size:13px; line-height:1.5; }
+    textarea{
+      width:100%; min-height:160px;
+      background: rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
+      border-radius:14px;
+      padding:12px 12px;
+      font-size:14px;
+      outline:none;
+      resize: vertical;
+    }
+    textarea:focus{ border-color: rgba(140,170,255,0.7); box-shadow: 0 0 0 3px rgba(140,170,255,0.18); }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    button{
+      border:0; cursor:pointer;
+      background: linear-gradient(90deg, #6c7bff, #a56cff);
+      color:white;
+      padding:10px 14px;
+      border-radius:12px;
+      font-weight:600;
+      font-size:14px;
+    }
+    button.secondary{
+      background: rgba(255,255,255,0.10);
+      border:1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      font-weight:600;
+    }
+    button:disabled{ opacity:.65; cursor:not-allowed; }
+
+    .stars{
+      font-size:28px;
+      letter-spacing:2px;
+      margin:6px 0 8px;
+      user-select:none;
+    }
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:7px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.20);
+      color: var(--muted);
+      font-size:12px;
+      margin: 6px 6px 0 0;
+    }
+    .label{
+      display:inline-flex; align-items:center; gap:8px;
+      font-weight:700; color: var(--text); font-size:14px;
+      margin: 6px 0 0;
+    }
+    .dot{ width:10px; height:10px; border-radius:999px; background:#7b89ff; }
+    .dot.pos{ background:#3be38f; }
+    .dot.neu{ background:#f7c94b; }
+    .dot.neg{ background:#ff5e7a; }
+
+    .kv{ display:grid; grid-template-columns: 1fr; gap:10px; margin-top:10px; }
+    .box{
+      border:1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+      border-radius:14px;
+      padding:12px;
+    }
+    .k{ color: var(--muted); font-size:12px; }
+    .v{ font-size:14px; font-weight:650; margin-top:4px; }
+    .hr{ height:1px; background: rgba(255,255,255,0.08); margin:12px 0; }
+
+    .hint{ color: var(--muted); font-size:12px; line-height:1.6; }
+    code{ background: rgba(255,255,255,0.10); padding:2px 6px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Left: Input -->
+    <div class="card">
+      <h1>ให้ดาวคาเฟ่จากความคิดเห็น</h1>
+      <p class="sub">
+        พิมพ์รีวิว/ความคิดเห็นของคุณ แล้วระบบจะทำนายความรู้สึก (Positive / Neutral / Negative)
+        เพื่อแปลงเป็นคะแนนดาวอัตโนมัติ
+      </p>
+
+      <textarea id="text" placeholder="ตัวอย่าง: กาแฟหอมมาก บาริสต้าบริการดี ราคาสมเหตุสมผล..."></textarea>
+
+      <div class="row">
+        <button id="btnPredict">ให้คะแนน (Predict)</button>
+        <button class="secondary" id="btnExamplePos">ตัวอย่างบวก</button>
+        <button class="secondary" id="btnExampleNeu">ตัวอย่างกลางๆ</button>
+        <button class="secondary" id="btnExampleNeg">ตัวอย่างลบ</button>
+        <button class="secondary" id="btnClear">ล้างข้อความ</button>
+      </div>
+
+      <div class="hr"></div>
+      <div class="hint">
+        เว็บนี้เรียก API: <code>POST /predict</code> และอ่านข้อมูลโมเดลจาก <code>GET /model/info</code><br/>
+        ถ้า API อยู่คนละโดเมน ให้แก้ตัวแปร <code>API_BASE</code> ในสคริปต์ด้านล่าง
+      </div>
+    </div>
+
+    <!-- Right: Result -->
+    <div class="card">
+      <h1>ผลการให้ดาว</h1>
+      <div class="stars" id="stars">★★★★★</div>
+      <div class="label" id="label">
+        <span class="dot neu" id="dot"></span>
+        <span id="labelText">รอการทำนาย…</span>
+      </div>
+
+      <div style="margin-top:10px;">
+        <span class="pill">คะแนนดาว: <b id="score">-</b></span>
+        <span class="pill">Confidence: <b id="conf">-</b></span>
+        <span class="pill">Latency: <b id="lat">-</b></span>
+      </div>
+
+      <div class="kv">
+        <div class="box">
+          <div class="k">Model Version</div>
+          <div class="v" id="version">-</div>
+        </div>
+        <div class="box">
+          <div class="k">คำอธิบายการให้คะแนน</div>
+          <div class="v">
+            Positive → 5 ดาว<br/>
+            Neutral → 3 ดาว<br/>
+            Negative → 1 ดาว
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // =========================
+  // CONFIG
+  // =========================
+  const API_BASE = ""; 
+  // ถ้า backend อยู่ที่ http://127.0.0.1:8080 ให้ใส่:
+  // const API_BASE = "http://127.0.0.1:8080";
+
+  const elText = document.getElementById("text");
+  const btnPredict = document.getElementById("btnPredict");
+  const btnClear = document.getElementById("btnClear");
+  const btnExamplePos = document.getElementById("btnExamplePos");
+  const btnExampleNeu = document.getElementById("btnExampleNeu");
+  const btnExampleNeg = document.getElementById("btnExampleNeg");
+
+  const elStars = document.getElementById("stars");
+  const elScore = document.getElementById("score");
+  const elConf = document.getElementById("conf");
+  const elLat = document.getElementById("lat");
+  const elVersion = document.getElementById("version");
+  const elLabelText = document.getElementById("labelText");
+  const elDot = document.getElementById("dot");
+
+  // =========================
+  // UTIL
+  // =========================
+  function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+  function labelToScore(label){
+    const l = (label || "").toLowerCase();
+    if (l.includes("pos")) return 5;
+    if (l.includes("neu")) return 3;
+    if (l.includes("neg")) return 1;
+    // fallback
+    return 3;
+  }
+
+  function renderStars(score){
+    const full = "★".repeat(score);
+    const empty = "☆".repeat(5 - score);
+    elStars.textContent = full + empty;
+    elScore.textContent = score;
+  }
+
+  function setLabelUI(label){
+    const l = (label || "").toLowerCase();
+    elDot.className = "dot";
+    if (l.includes("pos")) elDot.classList.add("pos");
+    else if (l.includes("neu")) elDot.classList.add("neu");
+    else if (l.includes("neg")) elDot.classList.add("neg");
+    else elDot.classList.add("neu");
+    elLabelText.textContent = `ผลทำนาย: ${label || "-"}`;
+  }
+
+  async function fetchModelInfo(){
+    try{
+      const res = await fetch(`${API_BASE}/model/info`);
+      if(!res.ok) throw new Error("model/info failed");
+      const data = await res.json();
+      // รองรับหลายรูปแบบ: {version: "..."} หรือ {model_version:"..."}
+      elVersion.textContent = data.version || data.model_version || data.model?.version || "-";
+    }catch(e){
+      elVersion.textContent = "(อ่านข้อมูลโมเดลไม่ได้)";
+    }
+  }
+
+  async function predict(){
+    const text = elText.value.trim();
+    if(!text){
+      alert("พิมพ์ความคิดเห็นก่อนนะ");
+      return;
+    }
+
+    btnPredict.disabled = true;
+    btnPredict.textContent = "กำลังประมวลผล…";
+
+    const t0 = performance.now();
+    try{
+      const res = await fetch(`${API_BASE}/predict`, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ text })
+      });
+      const t1 = performance.now();
+
+      if(!res.ok){
+        const msg = await res.text();
+        throw new Error(msg || "predict failed");
+      }
+
+      const data = await res.json();
+      // คาดหวัง response ประมาณ:
+      // { label: "Positive", confidence: 0.93, latency_ms: 12, version: "v1" }
+      const label = data.label ?? data.prediction ?? data.sentiment ?? "-";
+      const conf = data.confidence ?? data.probability ?? data.score ?? null;
+
+      // latency: ใช้จาก backend ถ้ามี ไม่มีก็ใช้วัดจาก frontend
+      const latency = data.latency_ms ?? Math.round(t1 - t0);
+
+      const score = labelToScore(label);
+
+      renderStars(score);
+      setLabelUI(label);
+
+      if(conf === null || conf === undefined){
+        elConf.textContent = "-";
+      }else{
+        elConf.textContent = (clamp01(Number(conf)) * 100).toFixed(1) + "%";
+      }
+      elLat.textContent = `${latency} ms`;
+
+      // version: ถ้า backend ส่งมาก็ใช้
+      if(data.version) elVersion.textContent = data.version;
+
+    }catch(e){
+      alert("ทำนายไม่สำเร็จ: " + e.message);
+    }finally{
+      btnPredict.disabled = false;
+      btnPredict.textContent = "ให้คะแนน (Predict)";
+    }
+  }
+
+  // =========================
+  // EVENTS
+  // =========================
+  btnPredict.addEventListener("click", predict);
+  btnClear.addEventListener("click", () => {
+    elText.value = "";
+    renderStars(0);
+    elScore.textContent = "-";
+    elConf.textContent = "-";
+    elLat.textContent = "-";
+    elLabelText.textContent = "รอการทำนาย…";
+    elDot.className = "dot neu";
+  });
+
+  btnExamplePos.addEventListener("click", () => {
+    elText.value = "กาแฟหอมมาก บรรยากาศดี บริการดีมาก ประทับใจสุดๆ จะกลับมาอีกแน่นอน";
+  });
+  btnExampleNeu.addEventListener("click", () => {
+    elText.value = "รสชาติโอเค พอใช้ได้ ราคาแอบสูงนิดหน่อย แต่โดยรวมถือว่าไม่แย่";
+  });
+  btnExampleNeg.addEventListener("click", () => {
+    elText.value = "กาแฟไม่อร่อย รอนาน บริการไม่ดี รู้สึกไม่คุ้มราคา";
+  });
+
+  // init
+  renderStars(0);
+  fetchModelInfo();
+</script>
+</body>
+</html>
